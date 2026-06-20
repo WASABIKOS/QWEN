@@ -8,7 +8,7 @@ load_dotenv()
 
 app = Flask(__name__)
 
-Z_AI_API_URL = os.getenv('Z_AI_API_URL', 'http://localhost:8000')
+Z_AI_API_URL = os.getenv('Z_AI_API_URL', 'https://api.z.ai/api/coding/paas/v4')
 Z_AI_API_KEY = os.getenv('Z_AI_API_KEY', '')
 
 
@@ -38,6 +38,10 @@ def z_ai_proxy():
         message = data.get('message')
         context = data.get('context')
         model = data.get('model', 'z-ai-latest')
+        # server.ts usa 'z-ai-latest' como default generico; mapear al modelo
+        # real del Coding Plan. Ajustar si tu cuenta usa otra version de GLM.
+        if model in ('z-ai-latest', '', None):
+            model = 'glm-5.2'
 
         if not message or not isinstance(message, str) or not message.strip():
             return jsonify({
@@ -71,7 +75,7 @@ def z_ai_proxy():
 
         start = time.time()
         upstream = requests.post(
-            f'{Z_AI_API_URL}/api/chat',
+            f'{Z_AI_API_URL}/chat/completions',
             json=upstream_payload,
             headers=headers,
             timeout=25  # debajo del timeout de 30s que aplica server.ts
